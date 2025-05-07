@@ -1,23 +1,37 @@
-version: "3.8"
-
 services:
+  # ───────────────── Redis ─────────────────
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: redis
-    # ── delete or comment the next two lines ──
-    # ports:
-    #   - "6379:6379"
 
+  # ───────────────── FastAPI service ───────
   maas-seed:
     build: .
     container_name: maas-seed-service
-    ports:
-      - "8000:8000"
     env_file:
       - aws.env
     environment:
       - REDIS_URL=redis://redis:6379/0
-      # - FEAST_BASE_URL=http://172.17.0.1:6567 #   ← stays the same
+      - FEAST_BASE_URL=http://localhost:6567
+    ports:
+      - "8000:8000"
     depends_on:
       - redis
 
+  # ─────────── Feast port‑forward side‑car ───────────
+  feast-tunnel:
+    image: amazon/aws-cli:2.15.59          # aws cli + bash
+    container_name: feast-tunnel
+    entrypoint: [""]                       # clear default entrypoint
+    env_file: aws.env
+    command: >
+      sh -c "
+        curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl &&
+        install -m 0755 kubectl /usr/local/bin/kubectl &&
+        aws eks update-kubeconfig --name DE-platform --region us-east-1 &&
+        # correct syntax: [LOCAL_PORT:]REMOTE_PORT
+        kubectl port-forward svc/feast-python-server -n feast-python 6567:6567
+      "
+    network_mode: "service:maas-seed"      # shares namespace with API
+    depends_on:
+      - maas-seed
