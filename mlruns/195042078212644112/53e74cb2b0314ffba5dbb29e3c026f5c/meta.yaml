@@ -1,0 +1,15 @@
+artifact_uri: file:///home/selam/Downloads/maas-seed/mlruns/195042078212644112/53e74cb2b0314ffba5dbb29e3c026f5c/artifacts
+end_time: 1746529332185
+entry_point_name: ''
+experiment_id: '195042078212644112'
+lifecycle_stage: active
+run_id: 53e74cb2b0314ffba5dbb29e3c026f5c
+run_name: bedecked-gnat-804
+run_uuid: 53e74cb2b0314ffba5dbb29e3c026f5c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746529332181
+status: 3
+tags: []
+user_id: selam

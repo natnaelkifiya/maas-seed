@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    # ── delete or comment the next two lines ──
+    # ports:
+    #   - "6379:6379"
+
+  maas-seed:
+    build: .
+    container_name: maas-seed-service
+    ports:
+      - "8000:8000"
+    env_file:
+      - aws.env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      # - FEAST_BASE_URL=http://172.17.0.1:6567 #   ← stays the same
+    depends_on:
+      - redis
+

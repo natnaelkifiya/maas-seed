@@ -1,32 +1,59 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from pydantic import BaseModel
+# api.py
+from enum import Enum
+import asyncio, logging
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from .redis_cache import get_cached_model
 from .inference import run_inference
-import asyncio
-import logging
 
 router = APIRouter()
 
-class APIRequestData(BaseModel):
-    source_bank: str
-    customerId: str
-    loan_type: str
-    loan_subtype: str
+# ────────────────────────────────────────────────────────────────
+# 1) Enumerations of allowed categorical values
+# ────────────────────────────────────────────────────────────────
+class LoanType(str, Enum):
+    msme = "msme"
+    sme = "safee"
+    retail = "ifb"
 
+class SourceBank(str, Enum):
+    coop = "coop"
+    abyssinia = "zamzam"
+
+# ────────────────────────────────────────────────────────────────
+# 2) Request body schema with validation
+# ────────────────────────────────────────────────────────────────
+class APIRequestData(BaseModel):
+    customerId: str = Field(..., min_length=1)
+    loan_type: LoanType
+    loan_subtype: str          # ⇠ keep free‑form or add another Enum later
+    source_bank: SourceBank
+
+# ────────────────────────────────────────────────────────────────
 RETRY_LIMIT = 3
 
 @router.post("/transaction")
-async def predict(data: APIRequestData, background_tasks: BackgroundTasks):
+async def predict(data: APIRequestData):
     model = get_cached_model()
-    if model is None:
+    if not model:
         raise HTTPException(status_code=503, detail="Model not loaded")
-    
+
+    loop = asyncio.get_running_loop()           # 3.7+
+
     for attempt in range(RETRY_LIMIT):
         try:
-            result = await asyncio.to_thread(run_inference, model, data.dict())
-            return {"prediction": result[0]}
+            result = await loop.run_in_executor(
+                None,                           # default ThreadPoolExecutor
+                run_inference, model, data.dict()
+            )
+            return {
+                "prediction": int(result["class_label"]),
+                "predict_prob": result["predict_prob"],
+                "feature_importance": result["feature_importance"],
+                "customerId": data.customerId,
+            }
         except Exception as e:
             logging.warning(f"Attempt {attempt + 1} failed: {e}")
-            await asyncio.sleep(0.5 * (attempt + 1))  # exponential backoff
+            await asyncio.sleep(0.5 * (attempt + 1))
 
-    raise HTTPException(status_code=500, detail="Inference failed after retries")
+    raise HTTPException(status_code=500, detail="Inference failed")

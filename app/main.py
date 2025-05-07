@@ -3,10 +3,12 @@ from . import api, model_loader, redis_cache
 
 app = FastAPI()
 
+
 @app.on_event("startup")
-async def load_and_cache_model():
-    path = model_loader.get_latest_model_path()
-    model = model_loader.load_model(path)
+async def startup_event():
+    print("Loading model...")
+    model = model_loader.load_latest_model()
     redis_cache.cache_model(model)
+    print("Model loaded and cached successfully.")
 
 app.include_router(api.router)

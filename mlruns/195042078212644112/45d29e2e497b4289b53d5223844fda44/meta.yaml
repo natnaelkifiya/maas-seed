@@ -1,0 +1,15 @@
+artifact_uri: file:///home/selam/Downloads/maas-seed/mlruns/195042078212644112/45d29e2e497b4289b53d5223844fda44/artifacts
+end_time: 1746529930958
+entry_point_name: ''
+experiment_id: '195042078212644112'
+lifecycle_stage: active
+run_id: 45d29e2e497b4289b53d5223844fda44
+run_name: capricious-hound-632
+run_uuid: 45d29e2e497b4289b53d5223844fda44
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746529930954
+status: 3
+tags: []
+user_id: selam
