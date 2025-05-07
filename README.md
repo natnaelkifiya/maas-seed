@@ -93,8 +93,7 @@ Example response
 
 ```json
 {
-  "prediction": 1,
-  "predict_prob": [0.14, 0.86],
+  "credit_score": "418",
   "feature_importance": [
     {"total_credit": 0.33},
     {"log_balance": 0.20},

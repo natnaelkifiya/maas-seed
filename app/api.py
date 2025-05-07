@@ -47,8 +47,7 @@ async def predict(data: APIRequestData):
                 run_inference, model, data.dict()
             )
             return {
-                "prediction": int(result["class_label"]),
-                "predict_prob": result["predict_prob"],
+                "credit_score": result["credit_score"],
                 "feature_importance": result["feature_importance"],
                 "customerId": data.customerId,
             }
