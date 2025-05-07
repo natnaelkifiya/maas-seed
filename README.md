@@ -1,106 +1,151 @@
-# maas-seed
 
-**Model-as-a-Service (MaaS) Seed Microservice**
+# maas‑seed
 
-`maas-seed` is a production-ready microservice template that exposes machine learning models as APIs. It loads the latest `.pkl` model from a directory, caches it in Redis, and provides a FastAPI-based HTTP endpoint for real-time predictions. Designed for scalable deployment on Docker and Kubernetes (e.g., EKS).
+**Model‑as‑a‑Service (MaaS) Seed Micro‑service**
+
+`maas‑seed` is a production‑ready template that turns any pickled
+scikit‑learn model into a fully containerised prediction API.  It
+
+* pulls the **latest model artefact from S3** at startup,  
+* caches it in **Redis** for hot‑reload‑free inference,  
+* exposes a **FastAPI** endpoint (`/transaction`) for real‑time scoring, and  
+* (in dev) tunnels to a **remote Feast Python server** via `kubectl
+  port‑forward`, so you can pull online features without hand‑running
+  `kubectl` every time.
 
 ---
 
-## 🚀 Purpose
+## 🗂️ Project Layout
 
-- Serve ML models through a REST API
-- Load the latest `.pkl` model automatically at startup
-- Cache models in memory using Redis for fast inference
-- Enable reattempts and async processing for scalability
-- Containerized for cloud-native deployment
-
----
-
-## 🗂️ Project Structure
+```
 
 maas-seed/
 │
 ├── app/
-│ ├── main.py # FastAPI app and lifecycle
-│ ├── model_loader.py # Loads latest model from file
-│ └── redis_cache.py # Caches model in Redis
+│   ├── main.py            # FastAPI app + startup hook
+│   ├── api.py             # /transaction endpoint + validation
+│   ├── model\_loader.py    # fetch newest model from S3
+│   ├── inference.py       # feature store call → dataframe → predict
+│   └── redis\_cache.py
 │
-├── models/ # Place your .pkl model files here
-├── Dockerfile
+├── Dockerfile             # FastAPI image (Python 3.10‑slim)
+├── docker‑compose.yml     # redis + fastapi + feast‑tunnel
 ├── requirements.txt
-└── README.md
+├── aws.env                # AWS creds, Redis & MLflow URIs
+└── README.md              # you are here
+
+````
+
 ---
 
-## 🐳 Docker Instructions
+## 🚀 Quick‑start (local dev)
 
-### 🔨 Build the Docker Image
+> **Prereqs:** Docker ≥ 20.10 with Compose v2, an AWS user with
+> `eks:DescribeCluster` + S3 read permissions, and a running Kubernetes
+> cluster that hosts the **Feast Python Server** service
+> `feast-python-server` in namespace `feast-python`.
+
+### 1 Clone and create `aws.env`
+
+```env
+# aws.env  (never commit real secrets!)
+AWS_ACCESS_KEY_ID=…
+AWS_SECRET_ACCESS_KEY=…
+MLFLOW_TRACKING_URI=http://<mlflow-host>:5000   # optional
+REDIS_URL=redis://redis:6379/0                  # resolves inside compose
+````
+
+### 2 Start everything
 
 ```bash
-docker build -t model-service .
-🚀 Run the Docker Container
-bash
-Copy code
-docker run -d \
-  -p 8003:8000 \
-  -v $(pwd)/models:/models \
-  -e MODEL_DIR=/models \
-  -e REDIS_URL=redis://host.docker.internal:6379/0 \
-  --name model-service \
-  model-service
-📝 Note (macOS/Windows): host.docker.internal allows Docker to access services running on your host machine (e.g., Redis).
-🐧 Note (Linux): Replace host.docker.internal with your host IP (e.g., 172.17.0.1). This must be done for our EKS deployment and aws based test as both are linux based.
+docker compose up -d --build        # builds FastAPI image, then spins up
+```
 
-📬 API Endpoint
-POST /transaction -- chage this to model level names
-Request:
+Compose brings up **three** containers:
 
-json
-{
-  "APIrequest_data": {
-    "source_bank": "string",
-    "customerId": "string",
-    "loan_type": "string",
-    "loan_subtype": "string"
-  }
+| Container           | Purpose                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `redis`             | low‑latency model cache                                                                                      |
+| `maas-seed-service` | FastAPI app (port `8000`)                                                                                    |
+| `feast-tunnel`      | `aws eks update-kubeconfig` → `kubectl port‑forward` tunneled to `localhost:6567` inside the compose network |
 
-Response:
+Watch logs:
 
-json
-{
-  "prediction": "output_value"
-}
+```bash
+docker compose logs -f feast-tunnel       # expect “Forwarding from 127.0.0.1:6567”
+docker compose logs -f maas-seed-service  # expect “Application startup complete.”
+```
 
-🧪 Local Testing
-Ensure Redis is running locally:
+### 3 Call the API
 
-bash
-
-redis-cli ping
-# Output: PONG
-Use curl to test the endpoint:
-
-bash
-
-curl -X POST http://localhost:8003/predict \
+```bash
+curl -X POST http://localhost:8000/transaction \
   -H "Content-Type: application/json" \
-  -d '{"APIrequest_data": {"source_bank": "X", "customerId": "123", "loan_type": "Y", "loan_subtype": "Z"}}'
-✅ Requirements (For Local Dev)
-bash
+  -d '{
+        "customerId":  "cust_test",
+        "loan_type":   "msme",
+        "loan_subtype":"demo",
+        "source_bank": "coop"
+      }' | jq .
+```
 
-pip install -r requirements.txt
-📦 Environment Variables
-Variable	Description	Example
-MODEL_DIR	Directory where model .pkl files are stored	/models
-REDIS_URL	Redis server connection URL	redis://localhost:6379/0
+Example response
 
-📄 License
-MIT License. Free to use with attribution.
+```json
+{
+  "prediction": 1,
+  "predict_prob": [0.14, 0.86],
+  "feature_importance": [
+    {"total_credit": 0.33},
+    {"log_balance": 0.20},
+    {"total_debet": 0.14},
+    {"volatility": 0.11},
+    {"sd_credit": 0.09}
+  ],
+  "customerId": "cust_test"
+}
+```
 
-👤 Author
-Built by Natnael and Data Science Team
-Part of the scalable AI infrastructure at KFT.
+Interactive docs live at **[http://localhost:8000/docs](http://localhost:8000/docs)**.
 
+### 4 Tear down
 
+```bash
+docker compose down
+```
 
+---
 
+## 🧩 Environment Variables
 
+| Variable                                     | Description                                         | Default in compose                 |
+| -------------------------------------------- | --------------------------------------------------- | ---------------------------------- |
+| `REDIS_URL`                                  | Redis connection string                             | `redis://redis:6379/0`             |
+| `FEAST_BASE_URL`                             | URL the API uses to reach Feast                     | `http://localhost:6567` (tunneled) |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Used by side‑car to run `aws eks update-kubeconfig` | from `aws.env`                     |
+| `MLFLOW_TRACKING_URI`                        | Optional MLflow tracking server                     | from `aws.env`                     |
+
+---
+
+## 🏗️ Deploying to Kubernetes / EKS
+
+* Drop the side‑car; deploy `maas‑seed-service` **inside the same cluster** and
+  set `FEAST_BASE_URL=http://feast-python-server.feast-python.svc.cluster.local:6567`.
+* Use a **Secret** or IAM role for AWS credentials instead of `aws.env`.
+* Redis can be external (Elasticache) or an in‑cluster Helm release.
+
+---
+
+## 📄 License
+
+MIT — free to use with attribution.
+
+---
+
+## 👥 Authors
+
+Built by **Natnael** & the Data Science Team. Part of the scalable AI
+infrastructure at **KFT**.
+
+```
+```
