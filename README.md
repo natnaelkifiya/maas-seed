@@ -48,10 +48,10 @@ maas-seed/
 ### 1 Clone and create `aws.env`
 
 ```env
-# aws.env  (never commit real secrets!)
+# aws.env  (don't commit with git)
 AWS_ACCESS_KEY_ID=…
 AWS_SECRET_ACCESS_KEY=…
-MLFLOW_TRACKING_URI=http://<mlflow-host>:5000   # optional
+MLFLOW_TRACKING_URI=http://3.239.37.210:5000
 REDIS_URL=redis://redis:6379/0                  # resolves inside compose
 ````
 
