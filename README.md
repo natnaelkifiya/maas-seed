@@ -39,18 +39,15 @@ chmod +x maas_txn.sh
 ./maas_txn.sh
 ```
 
-This will:
-
-1. Fetch AWS credentials from Secrets Manager and write a temporary `.env`.
-2. Build and start all services via Docker Compose.
-3. Clean up the `.env` file automatically when done.
+```
+Then go to http://0.0.0.0:8000/docs#/ to access the end point
+```
 
 ---
 
 ## 🗂️ Environment Variables
 
-All necessary AWS keys and other settings are handled by `maas_txn.sh`. There’s no need to manage an `aws.env` file manually.
-
+All necessary AWS keys and other settings are handled by `maas_txn.sh`.
 ---
 
 ## 🏗️ Deploying to Kubernetes / EKS
