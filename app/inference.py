@@ -1,5 +1,6 @@
 from typing import Dict, List, Tuple
 import requests, pandas as pd, numpy as np
+import os
 
 FEATURE_ORDER = [
     "total_credit", "total_debit", "total_net_amt", "credit_mean", "debit_mean",
@@ -52,6 +53,8 @@ def map_prediction_to_fico_score_micro(predict_prob: List[Tuple[int, float]]):
 
 
 def run_inference(model, payload_from_client: Dict):
+    FEAST_BASE_URL = os.getenv("FEAST_BASE_URL", "http://localhost:6567")
+
     
     if payload_from_client.get("source_bank", "").lower() == "coop":
         payload_from_client["loan_type"] = "msme" 
@@ -61,7 +64,7 @@ def run_inference(model, payload_from_client: Dict):
         "features": [f"txn_fv_new2:{f}" for f in FEATURE_ORDER],
         "entities": {"customerId": [payload_from_client["customerId"]]},
     }
-    resp = requests.post("http://localhost:6567/get-online-features", json=feast_request)
+    resp = requests.post(f"{FEAST_BASE_URL}/get-online-features", json=feast_request)
     resp.raise_for_status()                     # raises if not 2xx
 
     meta, results = resp.json()["metadata"], resp.json()["results"]
