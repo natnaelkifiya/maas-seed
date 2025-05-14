@@ -27,7 +27,9 @@ maas-seed/
 ├── maas_txn.sh            # fetch creds, build & run services, clean up
 └── README.md              # you are here
 ```
-
+## Dependencies in your local machine
+* Install Docker compose
+* Install jq
 ---
 
 ## 🚀 Quick‑start
