@@ -17,12 +17,10 @@ RETRY_LIMIT = 3
 class APIRequestData(BaseModel):
     customerId: str = Field(..., min_length=1)
     loan_type: str
-    product_type: str
     source_bank: str
 
     # Tell Pydantic “these aren’t model fields—leave them alone”
-    _valid_loan_types: ClassVar[set[str]]   = {"msme", "micro"}
-    _valid_subtypes: ClassVar[set[str]]     = {"micro", "nano"}
+    _valid_loan_types: ClassVar[set[str]]   = {"agtech_safee"}
     _valid_source_banks: ClassVar[set[str]] = {
         "coop", "enat", "zamzam", "wegagen", "bunna", "amhara"
     }
@@ -35,13 +33,6 @@ class APIRequestData(BaseModel):
             raise ValueError(f"loan_type must be one of {cls._valid_loan_types}")
         return v_low
 
-    @field_validator("product_type")
-    def _check_product_type(cls, v: str):
-        v_low = v.lower()
-        if v_low not in cls._valid_subtypes:
-            raise ValueError(f"product_type must be one of {cls._valid_subtypes}")
-        return v_low
-
     @field_validator("source_bank")
     def _check_source_bank(cls, v: str):
         v_low = v.lower()
@@ -50,7 +41,7 @@ class APIRequestData(BaseModel):
         return v_low
 
 
-@router.post("/transaction")
+@router.post("/asset")
 async def predict(data: APIRequestData) -> Dict[str, Any]:
     model = get_cached_model()
     if not model:

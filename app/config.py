@@ -88,7 +88,7 @@ ml_model_config = ModelConfig(
     higher_is_better=True,
     s3_fallback=S3Fallback(
         bucket="cs-infernece-model-testdata",
-        root_prefix="models/models/1/",
-        artifact_subpath="Logistic_Regression_calibrated_model.joblib",
+        root_prefix="models/agtech_asset/",
+        artifact_subpath="agtech_asset.joblib",
     ),
 )

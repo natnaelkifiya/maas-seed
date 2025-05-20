@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from fastapi import FastAPI
 from . import api, model_loader, redis_cache
+from app.mapping_asset_demo import *
 
 # ────────────────────────────────────────────────────────────────
 # 1)  Logging

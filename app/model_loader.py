@@ -1,8 +1,29 @@
-import os, tempfile, boto3, joblib
+import os, tempfile, boto3, joblib, logging
 from datetime import datetime, timezone
 from .config import ml_model_config as cfg
+import sys, importlib
 
+
+log = logging.getLogger(__name__)
 s3 = boto3.client("s3")
+
+
+def _patch_pickle_globals():
+    """
+    Ensure functions referenced as '__main__.map_*' exist
+    when we unpickle the model.
+    """
+    main_mod = sys.modules.get("__main__")
+    if not main_mod:
+        return
+
+    # Import the real module that holds the functions
+    helpers = importlib.import_module("app.mapping_asset_demo")
+
+    # Copy every map_* symbol into __main__
+    for name in dir(helpers):
+        if name.startswith("map_"):
+            setattr(main_mod, name, getattr(helpers, name))
 
 def _latest_s3_model(bucket: str, root_prefix: str, artifact_subpath: str):
     paginator = s3.get_paginator("list_objects_v2")
@@ -23,8 +44,15 @@ def _latest_s3_model(bucket: str, root_prefix: str, artifact_subpath: str):
 def load_latest_model():
     fb = cfg.s3_fallback
     key = _latest_s3_model(fb.bucket, fb.root_prefix, fb.artifact_subpath)
-    print(f"Loading latest model from S3: s3://{fb.bucket}/{key}")
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+    log.info("Downloading model artefact: s3://%s/%s", fb.bucket, key)
+    
+    _patch_pickle_globals() 
+
+    # stream to a temp-file
+    with tempfile.NamedTemporaryFile("wb+", delete=False) as tmp:
         s3.download_fileobj(fb.bucket, key, tmp)
-        model = joblib.load(tmp.name)
+
+        tmp.flush(); tmp.seek(0)
+        model = joblib.load(tmp)
+
     return model
