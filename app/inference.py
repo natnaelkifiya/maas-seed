@@ -26,35 +26,23 @@ class InferenceError(RuntimeError):
 logger = logging.getLogger(__name__)
 
 # KEEP FEATURE_ORDER IN SYNC WITH TRAINING TIME
-FEATURE_ORDER = [
-    "land_ownership",
-    "land_area_ha",
-    "land_use",
-    "house_ownership",
-    "house_type",
-    "farm_equipment_ownership",
-    "equipment_quality",
-    "irrigation_infrastructure",
-    "storage_facilities",
-    "transportation_equipment",
-    "livestock_type",
-    "number_of_cattle",
-    "number_of_sheep",
-    "number_of_goats",
-    "number_of_poultry",
-    "livestock_productivity",
-    "animal_shelter",
-    "savings_account",
-    "credit_access",
-    "farm_insurance",
-    "monthly_ag_expenditure",
-    "communication_devices",
-    "shared_resources",
-    "electricity_availability",
-    "water_source",
-    "housing_durability",
-    "dependence_on_natural_resources",
-]
+FEATURE_ORDER =  ['age',
+                'gender',
+                'marital_status',
+                'education_level',
+                'household_size',
+                'household_composition',
+                'monthly_household_income',
+                'dependents_education',
+                'region',
+                'migration_status',
+                'employment_status',
+                'employment_type',
+                'digital_literacy',
+                'access_to_extension',
+                'cooperative_membership',
+                'proximity_to_markets']
+
 
 # ────────────────────────────────────────────────────────────────
 # Business helpers (unchanged)
@@ -123,7 +111,7 @@ def run_inference(model: Dict[str, Any], payload_from_client: Dict) -> Dict:
     # 1) Pull feature vector from Feast
     # ------------------------------------------------------
     feast_request = {
-        "features": [f"asset_fv:{f}" for f in FEATURE_ORDER],
+        "features": [f"demographic_fv:{f}" for f in FEATURE_ORDER],
         "entities": {"customerId": [payload_from_client["customerId"]]},
     }
 

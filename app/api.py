@@ -41,7 +41,7 @@ class APIRequestData(BaseModel):
         return v_low
 
 
-@router.post("/asset")
+@router.post("/demographic")
 async def predict(data: APIRequestData) -> Dict[str, Any]:
     model = get_cached_model()
     if not model:
