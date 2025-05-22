@@ -26,7 +26,7 @@ class APIRequestData(BaseModel):
     }
 
     # v2-style validators
-    @field_validator("loan_type")
+    @field_validator("loan_type")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
     def _check_loan_type(cls, v: str):
         v_low = v.lower()
         if v_low not in cls._valid_loan_types:
@@ -41,7 +41,7 @@ class APIRequestData(BaseModel):
         return v_low
 
 
-@router.post("/demographic")
+@router.post("/polutry")
 async def predict(data: APIRequestData) -> Dict[str, Any]:
     model = get_cached_model()
     if not model:

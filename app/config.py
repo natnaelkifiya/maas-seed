@@ -82,13 +82,13 @@ class ModelConfig:
 # 3)  Concrete instance used by the app
 # ────────────────────────────────────────────────────────────────
 ml_model_config = ModelConfig(
-    experiment_name="ml_test_v5",
-    artifact_path="txn_model_named",
+    experiment_name="plutry_experiment",
+    artifact_path="plutry_model",
     metric="f1_score",
     higher_is_better=True,
     s3_fallback=S3Fallback(
-        bucket="cs-infernece-model-testdata",
-        root_prefix="models/agtech_demographic/",
-        artifact_subpath="agtech_demographic.joblib",
+        bucket="agtech-models",
+        root_prefix="Agtech-Safee-models/",
+        artifact_subpath="Poultry_model.pkl",
     ),
 )
