@@ -54,7 +54,6 @@ async def predict(data: APIRequestData) -> Dict[str, Any]:
             result = await loop.run_in_executor(None, run_inference, model, data.dict())
             return {
                 "credit_score": result["credit_score"],
-                "feature_importance": result["feature_importance"],
                 "customerId": data.customerId,
             }
         except Exception as e:
