@@ -1,0 +1,15 @@
+artifact_uri: file:///home/selam/Downloads/maas-seed/app/mlruns/128125651593388411/676dc3d7603a42c1ac45f995690d9620/artifacts
+end_time: 1746527466298
+entry_point_name: ''
+experiment_id: '128125651593388411'
+lifecycle_stage: active
+run_id: 676dc3d7603a42c1ac45f995690d9620
+run_name: bald-ram-143
+run_uuid: 676dc3d7603a42c1ac45f995690d9620
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746527466294
+status: 3
+tags: []
+user_id: selam

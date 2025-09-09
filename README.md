@@ -1,106 +1,67 @@
-# maas-seed
+**Model‑as‑a‑Service (MaaS) Seed Micro‑service**
 
-**Model-as-a-Service (MaaS) Seed Microservice**
+`maas‑seed` is a production‑ready template that turns any pickled scikit‑learn model into a fully containerised prediction API. It:
 
-`maas-seed` is a production-ready microservice template that exposes machine learning models as APIs. It loads the latest `.pkl` model from a directory, caches it in Redis, and provides a FastAPI-based HTTP endpoint for real-time predictions. Designed for scalable deployment on Docker and Kubernetes (e.g., EKS).
-
----
-
-## 🚀 Purpose
-
-- Serve ML models through a REST API
-- Load the latest `.pkl` model automatically at startup
-- Cache models in memory using Redis for fast inference
-- Enable reattempts and async processing for scalability
-- Containerized for cloud-native deployment
+* pulls the **latest model artefact from S3** at startup,
+* caches it in **Redis** for hot-reload-free inference,
+* exposes a **FastAPI** endpoint (`/transaction`) for real-time scoring, and
+* (in dev) tunnels to a **remote Feast Python server** via `kubectl port-forward`, so you can pull online features without hand‑running `kubectl` every time.
 
 ---
 
-## 🗂️ Project Structure
+## 🗂️ Project Layout
 
+```
 maas-seed/
 │
 ├── app/
-│ ├── main.py # FastAPI app and lifecycle
-│ ├── model_loader.py # Loads latest model from file
-│ └── redis_cache.py # Caches model in Redis
+│   ├── main.py            # FastAPI app + startup hook
+│   ├── api.py             # /transaction endpoint + validation
+│   ├── model_loader.py    # fetch newest model from S3
+│   ├── inference.py       # feature store call → dataframe → predict
+│   └── redis_cache.py
 │
-├── models/ # Place your .pkl model files here
-├── Dockerfile
+├── Dockerfile             # FastAPI image (Python 3.10-slim)
+├── docker-compose.yml     # redis + fastapi + feast-tunnel
 ├── requirements.txt
-└── README.md
+├── maas_txn.sh            # fetch creds, build & run services, clean up
+└── README.md              # you are here
+```
+## Dependencies in your local machine
+* Install Docker compose
+* Install jq
 ---
 
-## 🐳 Docker Instructions
+## 🚀 Quick‑start
 
-### 🔨 Build the Docker Image
+Make the launcher script executable and run it:
 
 ```bash
-docker build -t model-service .
-🚀 Run the Docker Container
-bash
-Copy code
-docker run -d \
-  -p 8003:8000 \
-  -v $(pwd)/models:/models \
-  -e MODEL_DIR=/models \
-  -e REDIS_URL=redis://host.docker.internal:6379/0 \
-  --name model-service \
-  model-service
-📝 Note (macOS/Windows): host.docker.internal allows Docker to access services running on your host machine (e.g., Redis).
-🐧 Note (Linux): Replace host.docker.internal with your host IP (e.g., 172.17.0.1). This must be done for our EKS deployment and aws based test as both are linux based.
 
-📬 API Endpoint
-POST /transaction -- chage this to model level names
-Request:
+chmod +x maas_txn.sh
 
-json
-{
-  "APIrequest_data": {
-    "source_bank": "string",
-    "customerId": "string",
-    "loan_type": "string",
-    "loan_subtype": "string"
-  }
+./maas_txn.sh
+```
 
-Response:
+This will:
 
-json
-{
-  "prediction": "output_value"
-}
+1. Fetch AWS credentials from Secrets Manager.
+2. Build and start all services via Docker Compose.
 
-🧪 Local Testing
-Ensure Redis is running locally:
+Then, access the interactive API documentation at [http://0.0.0.0:8000/docs#/](http://0.0.0.0:8000/docs#/) to explore the `/transaction` endpoint and other routes.
 
-bash
+---
 
-redis-cli ping
-# Output: PONG
-Use curl to test the endpoint:
+## 🗂️ Environment Variables
 
-bash
+All necessary AWS keys and other settings are handled by `maas_txn.sh`.
 
-curl -X POST http://localhost:8003/predict \
-  -H "Content-Type: application/json" \
-  -d '{"APIrequest_data": {"source_bank": "X", "customerId": "123", "loan_type": "Y", "loan_subtype": "Z"}}'
-✅ Requirements (For Local Dev)
-bash
+## 📄 License
 
-pip install -r requirements.txt
-📦 Environment Variables
-Variable	Description	Example
-MODEL_DIR	Directory where model .pkl files are stored	/models
-REDIS_URL	Redis server connection URL	redis://localhost:6379/0
+MIT — free to use with attribution.
 
-📄 License
-MIT License. Free to use with attribution.
+---
 
-👤 Author
-Built by Natnael and Data Science Team
-Part of the scalable AI infrastructure at KFT.
+## 👥 Authors
 
-
-
-
-
+Built by **Natnael** & the Data Science Team. Part of the scalable AI infrastructure at **KFT**.
